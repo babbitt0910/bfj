@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>八番炸營運分析報表</title>
+    <link rel="stylesheet" href="./styles.css?v=14" />
+    <style>
+      body {
+        background: #fff;
+        padding: 24px;
+      }
+
+      .print-only-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        max-width: 1120px;
+        margin: 0 auto 16px;
+        padding: 12px 0;
+      }
+
+      .print-only-toolbar div {
+        color: #5f6f6a;
+        font-size: 14px;
+      }
+
+      .print-only-toolbar button {
+        min-height: 40px;
+        padding: 9px 16px;
+        border: 1px solid #176f63;
+        border-radius: 8px;
+        background: #176f63;
+        color: #fff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 700;
+      }
+
+      .print-only-toolbar .secondary {
+        background: #fff;
+        color: #176f63;
+      }
+
+      .print-report {
+        box-shadow: none;
+        border: 0;
+        max-width: 1120px;
+        margin: 0 auto;
+      }
+
+      .print-missing {
+        max-width: 720px;
+        margin: 80px auto;
+        padding: 24px;
+        border: 1px solid #d4dfdb;
+        border-radius: 8px;
+        color: #17211f;
+        line-height: 1.7;
+      }
+
+      @media print {
+        body {
+          padding: 0;
+        }
+
+        .print-only-toolbar {
+          display: none !important;
+        }
+
+        .print-report {
+          border: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <section class="print-only-toolbar">
+      <div>如果列印視窗沒有自動跳出，請按「列印 / 存成 PDF」或 Cmd+P。</div>
+      <div>
+        <button class="secondary" type="button" id="backButton">回儀表板</button>
+        <button type="button" id="printButton">列印 / 存成 PDF</button>
+      </div>
+    </section>
+    <main id="printRoot"></main>
+    <script>
+      const savedReport = sessionStorage.getItem("poskyPrintReport");
+      const root = document.getElementById("printRoot");
+
+      if (savedReport) {
+        const parser = new DOMParser();
+        const documentCopy = parser.parseFromString(savedReport, "text/html");
+        const report = documentCopy.querySelector(".print-report");
+        root.className = "print-report";
+        root.innerHTML = report ? report.innerHTML : savedReport;
+        setTimeout(() => window.print(), 500);
+      } else {
+        root.className = "print-missing";
+        root.innerHTML = "<h1>找不到列印資料</h1><p>請回到儀表板，重新按一次列印報表。</p>";
+      }
+
+      document.getElementById("printButton").addEventListener("click", () => window.print());
+      document.getElementById("backButton").addEventListener("click", () => {
+        window.location.href = "./";
+      });
+    </script>
+  </body>
+</html>

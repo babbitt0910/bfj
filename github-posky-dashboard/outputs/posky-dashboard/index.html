@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>八番炸 POSKY 交易儀表板</title>
+    <link rel="stylesheet" href="./styles.css?v=14" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">POSKY 交易明細</p>
+        <h1>八番炸營運儀表板</h1>
+      </div>
+      <div class="header-meta">
+        <span id="dateRange">讀取資料中</span>
+        <button id="resetFilters" class="icon-button" title="清除篩選" aria-label="清除篩選">
+          ↺
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <nav class="view-tabs" aria-label="儀表板頁面">
+        <button class="tab-button active" type="button" data-view-target="overview">總覽</button>
+        <button class="tab-button" type="button" data-view-target="products">商品分析</button>
+        <button class="tab-button" type="button" data-view-target="payments">支付方式</button>
+        <button class="tab-button" type="button" data-view-target="period">同期比較</button>
+        <button class="tab-button" type="button" data-view-target="upsize">加大分析</button>
+        <button class="tab-button" type="button" data-view-target="time">時段分析</button>
+        <button class="tab-button" type="button" data-view-target="details">明細查詢</button>
+        <button class="tab-button" type="button" data-view-target="print">列印報表</button>
+      </nav>
+
+      <section class="filters" aria-label="資料篩選">
+        <div class="filter-control" data-filter="month">
+          <span>月份</span>
+          <button class="filter-button" id="monthButton" type="button">全部月份</button>
+          <div class="filter-menu" id="monthFilter"></div>
+        </div>
+        <div class="filter-control" data-filter="payment">
+          <span>付款</span>
+          <button class="filter-button" id="paymentButton" type="button">全部付款</button>
+          <div class="filter-menu" id="paymentFilter"></div>
+        </div>
+        <div class="filter-control" data-filter="source">
+          <span>來源</span>
+          <button class="filter-button" id="sourceButton" type="button">全部來源</button>
+          <div class="filter-menu" id="sourceFilter"></div>
+        </div>
+        <div class="filter-control" data-filter="category">
+          <span>類型</span>
+          <button class="filter-button" id="categoryButton" type="button">全部類型</button>
+          <div class="filter-menu" id="categoryFilter"></div>
+        </div>
+        <label class="search-label">
+          搜尋商品
+          <input id="productSearch" type="search" placeholder="輸入商品名稱" />
+        </label>
+      </section>
+
+      <section class="view-page active" id="view-overview" data-view="overview">
+        <section class="kpi-grid" aria-label="關鍵指標">
+          <article class="kpi">
+            <span>營收</span>
+            <strong id="kpiRevenue">-</strong>
+            <small id="kpiRevenueHint">訂單總金額</small>
+          </article>
+          <article class="kpi">
+            <span>訂單</span>
+            <strong id="kpiOrders">-</strong>
+            <small id="kpiOrdersHint">已結帳筆數</small>
+          </article>
+          <article class="kpi">
+            <span>平均客單</span>
+            <strong id="kpiAov">-</strong>
+            <small>營收 / 訂單</small>
+          </article>
+          <article class="kpi">
+            <span>商品銷售額</span>
+            <strong id="kpiItems">-</strong>
+            <small id="kpiItemsHint">商品列加總</small>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>月營收趨勢</h2>
+              <span id="trendNote"></span>
+            </div>
+            <div id="monthlyTrend" class="chart"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>付款分群</h2>
+            </div>
+            <div id="paymentChart" class="bar-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>訂單來源</h2>
+            </div>
+            <div id="sourceChart" class="bar-list"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>線上點餐付款偏好</h2>
+              <span>只看線上點餐來源</span>
+            </div>
+            <div id="onlinePaymentChart" class="bar-list"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>電話訂餐 vs 線上點餐</h2>
+              <span id="channelTrendNote">每月訂單數</span>
+            </div>
+            <div id="channelTrend" class="chart"></div>
+            <div class="compact-table-wrap">
+              <table class="compact-table">
+                <thead>
+                  <tr>
+                    <th>月份</th>
+                    <th>電話訂餐</th>
+                    <th>線上點餐</th>
+                    <th>合計</th>
+                    <th>線上佔比</th>
+                  </tr>
+                </thead>
+                <tbody id="channelTrendTable"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>分類表現</h2>
+            </div>
+            <div id="categoryChart" class="bar-list"></div>
+          </article>
+        </section>
+        <section class="insight-panel" id="insight-overview"></section>
+      </section>
+
+      <section class="view-page" id="view-products" data-view="products">
+        <section class="dashboard-grid">
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>商品排行</h2>
+              <select id="rankMetric" class="compact-select" aria-label="商品排行指標">
+                <option value="revenue">銷售額</option>
+                <option value="quantity">數量</option>
+                <option value="orders">訂單數</option>
+              </select>
+            </div>
+            <div id="productRank" class="bar-list tall-bars"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>熱賣品項月趨勢</h2>
+              <span>依銷售額前 6 名</span>
+            </div>
+            <div id="productMonthlyTrend" class="chart"></div>
+            <div class="compact-table-wrap">
+              <table class="compact-table">
+                <thead>
+                  <tr id="productMonthlyHead"></tr>
+                </thead>
+                <tbody id="productMonthlyTable"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>分類表現</h2>
+            </div>
+            <div id="categoryChartProducts" class="bar-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>商品結構</h2>
+              <span id="productMixNote"></span>
+            </div>
+            <div id="productMix" class="bar-list"></div>
+          </article>
+        </section>
+        <section class="insight-panel" id="insight-products"></section>
+      </section>
+
+      <section class="view-page" id="view-payments" data-view="payments">
+        <section class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>付款分群</h2>
+              <span>營收 / 訂單</span>
+            </div>
+            <div id="paymentGroupChart" class="bar-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>線上點餐付款偏好</h2>
+              <span>只看線上點餐</span>
+            </div>
+            <div id="onlinePaymentChartPayments" class="bar-list"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>線上付款率月趨勢</h2>
+              <span>線上點餐內的付款行為</span>
+            </div>
+            <div id="onlinePaymentRateTrend" class="chart"></div>
+            <div class="compact-table-wrap">
+              <table class="compact-table">
+                <thead>
+                  <tr>
+                    <th>月份</th>
+                    <th>線上點餐總單</th>
+                    <th>線上先付款</th>
+                    <th>取餐時付款</th>
+                    <th>線上付款率</th>
+                  </tr>
+                </thead>
+                <tbody id="onlinePaymentRateTable"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>取餐時付款拆解</h2>
+              <span>線上點餐且到店結帳</span>
+            </div>
+            <div id="pickupPaymentChart" class="bar-list tall-bars"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>各家支付方式</h2>
+              <span id="paymentDetailCount"></span>
+            </div>
+            <div id="paymentDetailChart" class="bar-list tall-bars"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>支付方式月趨勢</h2>
+              <span>依支付供應商合併</span>
+            </div>
+            <div id="paymentMonthlyTrend" class="chart"></div>
+            <div class="compact-table-wrap">
+              <table class="compact-table">
+                <thead>
+                  <tr id="paymentMonthlyHead"></tr>
+                </thead>
+                <tbody id="paymentMonthlyTable"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-head">
+            <h2>支付方式明細</h2>
+            <span>可用來估手續費基礎</span>
+          </div>
+          <div class="table-wrap">
+            <table class="fee-table">
+              <thead>
+                <tr>
+                  <th>支付方式</th>
+                  <th>分群</th>
+                  <th>訂單數</th>
+                  <th>營收</th>
+                  <th>佔比</th>
+                  <th>平均客單</th>
+                  <th>手續費率</th>
+                  <th>預估手續費</th>
+                  <th>扣費後淨收</th>
+                </tr>
+              </thead>
+              <tbody id="paymentDetailTable"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="insight-panel" id="insight-payments"></section>
+      </section>
+
+      <section class="view-page" id="view-period" data-view="period">
+        <section class="period-controls panel">
+          <div>
+            <h2>同期日期範圍</h2>
+            <span id="periodRangeNote">每個月套用相同日期區間</span>
+          </div>
+          <div class="period-range">
+            <label>
+              起始日
+              <input id="periodStartDay" type="number" min="1" max="31" step="1" inputmode="numeric" />
+            </label>
+            <span>到</span>
+            <label>
+              結束日
+              <input id="periodEndDay" type="number" min="1" max="31" step="1" inputmode="numeric" />
+            </label>
+          </div>
+        </section>
+
+        <section class="kpi-grid" aria-label="同期比較指標">
+          <article class="kpi">
+            <span>最新同期營收</span>
+            <strong id="periodRevenue">-</strong>
+            <small id="periodRevenueHint">每月 1 日起算</small>
+          </article>
+          <article class="kpi">
+            <span>最新同期訂單</span>
+            <strong id="periodOrders">-</strong>
+            <small id="periodOrdersHint">訂單數</small>
+          </article>
+          <article class="kpi">
+            <span>同期平均客單</span>
+            <strong id="periodAov">-</strong>
+            <small>營收 / 訂單</small>
+          </article>
+          <article class="kpi">
+            <span>線上替代率</span>
+            <strong id="periodOnlineShare">-</strong>
+            <small id="periodOnlineShareHint">線上 / 線上+電話</small>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>每月同期營收</h2>
+              <span id="periodTrendNote">每月 1 日起算</span>
+            </div>
+            <div id="periodTrend" class="chart"></div>
+          </article>
+
+          <article class="panel wide table-panel">
+            <div class="panel-head">
+              <h2>同期營運比較</h2>
+              <span id="periodTableNote"></span>
+            </div>
+            <div class="table-wrap">
+              <table class="period-table">
+                <thead>
+                  <tr>
+                    <th>月份</th>
+                    <th>營收</th>
+                    <th>訂單</th>
+                    <th>平均客單</th>
+                    <th>電話訂餐</th>
+                    <th>線上點餐</th>
+                    <th>線上佔比</th>
+                    <th>線上先付款</th>
+                  </tr>
+                </thead>
+                <tbody id="periodTable"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide table-panel">
+            <div class="panel-head">
+              <h2>同期熱賣品項</h2>
+              <span id="periodProductNote">最新同期前 10 名</span>
+            </div>
+            <div class="table-wrap">
+              <table class="compact-table">
+                <thead>
+                  <tr>
+                    <th>商品</th>
+                    <th>類型</th>
+                    <th>銷售額</th>
+                    <th>數量</th>
+                    <th>訂單數</th>
+                    <th>較前月同期</th>
+                  </tr>
+                </thead>
+                <tbody id="periodProductTable"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+        <section class="insight-panel" id="insight-period"></section>
+      </section>
+
+      <section class="view-page" id="view-upsize" data-view="upsize">
+        <section class="kpi-grid">
+          <article class="kpi">
+            <span>加大額外營收</span>
+            <strong id="kpiUpsizeRevenue">-</strong>
+            <small>大份加價合計</small>
+          </article>
+          <article class="kpi">
+            <span>加大份數</span>
+            <strong id="kpiUpsizeQty">-</strong>
+            <small id="kpiUpsizeRows">大份選項</small>
+          </article>
+          <article class="kpi">
+            <span>加大率</span>
+            <strong id="kpiUpsizeRate">-</strong>
+            <small>大份份數 / 可加大商品數量</small>
+          </article>
+          <article class="kpi">
+            <span>平均加價</span>
+            <strong id="kpiUpsizeAvg">-</strong>
+            <small>每份大份平均加價</small>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>加大額外營收趨勢</h2>
+              <span id="upsizeTrendNote"></span>
+            </div>
+            <div id="upsizeTrend" class="chart"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>加大額外營收排行</h2>
+            </div>
+            <div id="upsizeRevenueRank" class="bar-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>加大率排行</h2>
+              <span>至少 20 份商品</span>
+            </div>
+            <div id="upsizeRateRank" class="bar-list"></div>
+          </article>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-head">
+            <h2>加大品項明細</h2>
+            <span id="upsizeTableCount"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品</th>
+                  <th>類型</th>
+                  <th>商品數量</th>
+                  <th>加大份數</th>
+                  <th>加大率</th>
+                  <th>加大額外營收</th>
+                  <th>平均加價</th>
+                </tr>
+              </thead>
+              <tbody id="upsizeTable"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="insight-panel" id="insight-upsize"></section>
+      </section>
+
+      <section class="view-page" id="view-time" data-view="time">
+        <section class="dashboard-grid">
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>時段熱度</h2>
+              <span>星期 × 小時</span>
+            </div>
+            <div id="heatmap" class="heatmap"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>主要營業時段營收</h2>
+              <span>17:00-24:00</span>
+            </div>
+            <div id="hourChart" class="bar-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>星期表現</h2>
+            </div>
+            <div id="weekdayChart" class="bar-list"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>主要營業時段月差異</h2>
+              <span>17:00-24:00 每月營收</span>
+            </div>
+            <div id="hourMonthlyTrend" class="chart"></div>
+            <div class="compact-table-wrap">
+              <table class="time-monthly-table">
+                <thead>
+                  <tr id="hourMonthlyHead"></tr>
+                </thead>
+                <tbody id="hourMonthlyTable"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-head">
+              <h2>星期表現月差異</h2>
+              <span>週一到週日每月營收</span>
+            </div>
+            <div id="weekdayMonthlyTrend" class="chart"></div>
+            <div class="compact-table-wrap">
+              <table class="time-monthly-table">
+                <thead>
+                  <tr id="weekdayMonthlyHead"></tr>
+                </thead>
+                <tbody id="weekdayMonthlyTable"></tbody>
+              </table>
+            </div>
+          </article>
+        </section>
+        <section class="insight-panel" id="insight-time"></section>
+      </section>
+
+      <section class="view-page" id="view-details" data-view="details">
+        <section class="panel table-panel">
+          <div class="panel-head">
+            <h2>建議檢討品項</h2>
+            <span id="deleteCandidateCount">排除包材與調味加購</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品</th>
+                  <th>類型</th>
+                  <th>數量</th>
+                  <th>銷售額</th>
+                  <th>訂單數</th>
+                  <th>平均單價</th>
+                  <th>檢討原因</th>
+                </tr>
+              </thead>
+              <tbody id="deleteCandidateTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-head">
+            <h2>商品明細</h2>
+            <span id="tableCount"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>商品</th>
+                  <th>類型</th>
+                  <th>數量</th>
+                  <th>銷售額</th>
+                  <th>訂單數</th>
+                  <th>平均單價</th>
+                </tr>
+              </thead>
+              <tbody id="productTable"></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="insight-panel" id="insight-details"></section>
+      </section>
+
+      <section class="view-page print-page" id="view-print" data-view="print">
+        <section class="print-toolbar">
+          <div>
+            <h2>列印報表</h2>
+            <span id="printSubtitle">依目前篩選條件產生</span>
+          </div>
+          <div class="print-actions">
+            <button class="print-button" id="printReportButton" type="button">列印 / 存成 PDF</button>
+            <span class="print-status" id="printStatus" aria-live="polite"></span>
+          </div>
+        </section>
+
+        <section class="print-report" id="printReport"></section>
+      </section>
+    </main>
+
+    <script src="./data-embedded.js?v=4"></script>
+    <script src="./app.js?v=43"></script>
+  </body>
+</html>
